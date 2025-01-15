@@ -3,33 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini AI Chatbot with Voice Note</title>
-
-  <!-- Bootstrap -->
+  <title>Gemini AI</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
-
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Bulma -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma/css/bulma.min.css">
-
-  <!-- Materialize CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-  <!-- Animate.css -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-
-  <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-  <!-- Howler.js for Audio Playback -->
   <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
-
-  <!-- Custom Style -->
   <style>
     body {
       background: linear-gradient(to right, #1e3c72, #2a5298);
@@ -38,8 +20,9 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: hidden; /* Hide the default scrollbars */
+      position: relative; /* Required for absolute positioning of snow canvas */
     }
-
     #chat-container {
       width: 100%;
       max-width: 700px;
@@ -50,22 +33,53 @@
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       overflow: hidden;
+      position: relative; /* Required for z-index */
+      z-index: 1; /* Ensure it's above the snow effect */
     }
-
+    #chat-header {
+        text-align: center;
+        padding: 10px;
+        background: #2c3e50;
+        font-weight: bold;
+    }
+    #typing-indicator {
+        display: inline-block;
+        margin-top: 5px;
+        font-size: 0.8em;
+        color: #95a5a6;
+    }
+    .typing-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin: 0 2px;
+        background-color: #95a5a6;
+        border-radius: 50%;
+        animation: typing 1.5s infinite;
+    }
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    @keyframes typing {
+        0% { opacity: 0.2; }
+        50% { opacity: 1; }
+        100% { opacity: 0.2; }
+    }
     #chat-box {
       flex-grow: 1;
       overflow-y: auto;
       padding: 20px;
       background: #34495e;
     }
-
     #chat-input-container {
       padding: 10px;
       background: #2c3e50;
       display: flex;
       align-items: center;
     }
-
     #chat-input {
       flex: 1;
       padding: 10px;
@@ -73,7 +87,6 @@
       border: none;
       margin-right: 10px;
     }
-
     #send-btn, #voice-btn {
       padding: 10px 20px;
       border-radius: 5px;
@@ -82,62 +95,73 @@
       border: none;
       cursor: pointer;
     }
-
     #send-btn:hover, #voice-btn:hover {
       background-color: #2980b9;
     }
-
     .bot-message, .user-message {
       margin: 10px 0;
       display: flex;
       align-items: center;
     }
-
-    /* Bot message on the left */
     .bot-message {
       justify-content: flex-start;
     }
-
-    /* User message on the right */
     .user-message {
       justify-content: flex-end;
     }
-
     .bot-message img, .user-message img {
       width: 40px;
       height: 40px;
       border-radius: 50%;
       margin-right: 10px;
     }
-
     .bot-message .text, .user-message .text {
       padding: 10px;
       border-radius: 5px;
     }
-
     .bot-message .text {
       background: #16a085;
       color: white;
     }
-
     .user-message .text {
       background: #e74c3c;
       color: white;
     }
-
     .audio-message {
       display: flex;
       align-items: center;
     }
-
     .audio-message audio {
       margin-left: 10px;
       border-radius: 5px;
     }
+    #snow-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* Make the canvas not block mouse events */
+      z-index: 0; /* Ensure the snow is behind the chat */
+    }
   </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.1/antd.min.css" integrity="sha512-bXq6/c6z9I0Q4d+wJq+z06k+F+3z8J5w7lBv+0r6W3x1V6aJt8jR/5i0tL/mX2x1g/r3C7+hX3qN5+j3/tQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/emoji-mart@5/css/emoji-mart.min.css" />
 </head>
 <body>
+  <canvas id="snow-canvas"></canvas>
   <div id="chat-container">
+    <div id="chat-header">
+        <span id="typing-indicator" style="display: none;">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        </span>
+    </div>
     <div id="chat-box"></div>
     <div id="chat-input-container">
       <input id="chat-input" type="text" placeholder="Type your message here..." />
@@ -145,141 +169,203 @@
       <button id="send-btn"><i class="fas fa-paper-plane"></i> Send</button>
     </div>
   </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@mui/material@5.15.1/umd/material-ui.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.1/antd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.1/redux.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/zustand/4.4.7/zustand.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/@reduxjs/toolkit/1.9.7/redux-toolkit.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/formik/2.4.5/formik.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-hook-form/7.49.2/react-hook-form.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.16/framer-motion.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emoji-mart@5/dist/browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-markdown/9.0.1/react-markdown.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recoil/0.7.8/recoil.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script>
     const chatBox = document.getElementById("chat-box");
     const chatInput = document.getElementById("chat-input");
     const sendBtn = document.getElementById("send-btn");
     const voiceBtn = document.getElementById("voice-btn");
-    const botProfile = "https://upcdn.io/kW15cM4/raw/uploads/2025/01/15/4k4GTD7g6o-nawa.jpg"; // Bot profile URL
-    const userProfile = "https://upcdn.io/kW15cM4/raw/uploads/2025/01/15/4k4GSy9mEs-IMG-20250115-WA0007-removebg-preview.png"; // User profile URL
-
+    const botProfile = "https://upcdn.io/kW15cM4/raw/uploads/2025/01/15/4k4GTD7g6o-nawa.jpg";
+    const userProfile = "https://upcdn.io/kW15cM4/raw/uploads/2025/01/15/4k4GSy9mEs-IMG-20250115-WA0007-removebg-preview.png";
     let isRecording = false;
     let mediaRecorder;
     let audioChunks = [];
+    const typingIndicator = document.getElementById("typing-indicator");
+    const snowCanvas = document.getElementById('snow-canvas');
 
-    // Handle voice recording
-    voiceBtn.addEventListener("click", () => {
-      if (isRecording) {
-        stopRecording();
-      } else {
-        startRecording();
-      }
+    // Initialize particles.js for snow effect
+    particlesJS('snow-canvas', {
+      particles: {
+        number: {
+          value: 100,
+          density: {
+            enable: true,
+            value_area: 800
+          }
+        },
+        color: {
+          value: '#ffffff'
+        },
+        shape: {
+          type: 'circle',
+          stroke: {
+            width: 0,
+            color: '#000000'
+          },
+          polygon: {
+            nb_sides: 5
+          },
+        },
+        opacity: {
+          value: 0.5,
+          random: true,
+          anim: {
+            enable: false,
+            speed: 1,
+            opacity_min: 0.1,
+            sync: false
+          }
+        },
+        size: {
+          value: 3,
+          random: true,
+          anim: {
+            enable: false,
+            speed: 40,
+            size_min: 0.1,
+            sync: false
+          }
+        },
+        line_linked: {
+          enable: false,
+          distance: 150,
+          color: '#ffffff',
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: 'bottom',
+          random: true,
+          straight: false,
+          out_mode: 'out',
+          bounce: false,
+          attract: {
+            enable: false,
+            rotateX: 600,
+            rotateY: 1200
+          }
+        }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: {
+            enable: false,
+            mode: 'repulse'
+          },
+          onclick: {
+            enable: false,
+            mode: 'push'
+          },
+          resize: true
+        },
+        modes: {
+          grab: {
+            distance: 400,
+            line_linked: {
+              opacity: 1
+            }
+          },
+          bubble: {
+            distance: 400,
+            size: 40,
+            duration: 2,
+            opacity: 8,
+            speed: 3
+          },
+          repulse: {
+            distance: 200,
+            duration: 0.4
+          },
+          push: {
+            particles_nb: 4
+          },
+          remove: {
+            particles_nb: 2
+          }
+        }
+      },
+      retina_detect: true
     });
 
-    function startRecording() {
-      isRecording = true;
-      audioChunks = [];
-      voiceBtn.textContent = "Stop Recording";
-
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.ondataavailable = event => {
-            audioChunks.push(event.data);
-          };
-          mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-            const audioURL = URL.createObjectURL(audioBlob);
-            sendVoiceMessage(audioURL);
-          };
-          mediaRecorder.start();
-        })
-        .catch(error => {
-          console.error("Error accessing microphone:", error);
-          alert("Unable to access microphone.");
-        });
+    voiceBtn.addEventListener("click", () => {if (isRecording) {stopRecording();} else {startRecording();}});
+    function startRecording() {isRecording = true;audioChunks = [];voiceBtn.textContent = "Stop Recording";navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {mediaRecorder = new MediaRecorder(stream);mediaRecorder.ondataavailable = event => {audioChunks.push(event.data);};mediaRecorder.onstop = () => {const audioBlob = new Blob(audioChunks, { type: "audio/wav" });const audioURL = URL.createObjectURL(audioBlob);sendVoiceMessage(audioURL);};mediaRecorder.start();}).catch(error => {console.error("Error accessing microphone:", error);alert("Unable to access microphone.");});}
+    function stopRecording() {isRecording = false;mediaRecorder.stop();voiceBtn.textContent = "Record";}
+    function sendVoiceMessage(audioURL) {appendMessageWithAudio(audioURL, "user");sendBotVoiceResponse();}
+    function appendMessageWithAudio(audioURL, sender) {const messageContainer = document.createElement("div");messageContainer.className = sender === "user" ? "user-message" : "bot-message";const img = document.createElement("img");img.src = sender === "user" ? userProfile : botProfile;const audioMessage = document.createElement("div");audioMessage.className = "audio-message";const audio = document.createElement("audio");audio.controls = true;audio.src = audioURL;audioMessage.appendChild(audio);messageContainer.appendChild(img);messageContainer.appendChild(audioMessage);chatBox.appendChild(messageContainer);chatBox.scrollTop = chatBox.scrollHeight;}
+    function showTypingIndicator() {
+        typingIndicator.style.display = 'inline-block';
     }
 
-    function stopRecording() {
-      isRecording = false;
-      mediaRecorder.stop();
-      voiceBtn.textContent = "Record";
+    function hideTypingIndicator() {
+        typingIndicator.style.display = 'none';
     }
-
-    function sendVoiceMessage(audioURL) {
-      appendMessageWithAudio(audioURL, "user");
-      sendBotVoiceResponse();
-    }
-
-    function appendMessageWithAudio(audioURL, sender) {
-      const messageContainer = document.createElement("div");
-      messageContainer.className = sender === "user" ? "user-message" : "bot-message";
-
-      const img = document.createElement("img");
-      img.src = sender === "user" ? userProfile : botProfile;
-
-      const audioMessage = document.createElement("div");
-      audioMessage.className = "audio-message";
-
-      const audio = document.createElement("audio");
-      audio.controls = true;
-      audio.src = audioURL;
-
-      audioMessage.appendChild(audio);
-      messageContainer.appendChild(img);
-      messageContainer.appendChild(audioMessage);
-      chatBox.appendChild(messageContainer);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function sendBotVoiceResponse() {
-      // Using Howler.js to play bot's voice response
-      // Menggunakan file suara yang sudah ada dengan bahasa Indonesia
-const sound = new Howl({
-  src: ['ngomong.mp3'],  // Pastikan file ini menggunakan suara bahasa Indonesia
-  volume: 1,
-  onend: () => console.log('Bot selesai berbicara')
-});
-sound.play();
-
-
-      setTimeout(() => {
-        appendMessageWithAudio(botVoiceResponseURL, "bot");
-        sound.play(); // Play the bot's voice
-      }, 1500); // Simulate bot processing time
-    }
-
+     function sendBotVoiceResponse() {
+         showTypingIndicator();
+         setTimeout(() => {
+             hideTypingIndicator();
+             appendMessageWithAudio(botVoiceResponseURL, "bot");
+         }, 3000); // Delay of 3 seconds
+     }
     sendBtn.addEventListener("click", async () => {
-      const userInput = chatInput.value.trim();
-      if (!userInput) return;
+    const userInput = chatInput.value.trim();
+    if (!userInput) return;
+    appendMessage(userInput, "user");
+    chatInput.value = "";
 
-      appendMessage(userInput, "user");
-      chatInput.value = "";
-
-      try {
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text: userInput }),
-        });
-
-        const data = await response.json();
-        appendMessage(data.reply || "Maaf, saya tidak dapat memproses pesan ini.", "bot");
-      } catch (error) {
+    try {
+        showTypingIndicator();
+        setTimeout(async () => { // Delay before fetching bot's response
+          const response = await fetch("/api/chat", {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ text: userInput }),
+          });
+          const data = await response.json();
+          hideTypingIndicator();
+          appendMessage(data.reply || "Maaf, saya tidak dapat memproses pesan ini.", "bot");
+        }, 3000); // Delay of 3 seconds
+        } catch (error) {
+        hideTypingIndicator();
         appendMessage("Error: Tidak dapat terhubung ke server.", "bot");
-      }
+    }
     });
 
     function appendMessage(message, sender) {
-      const messageContainer = document.createElement("div");
-      messageContainer.className = sender === "user" ? "user-message" : "bot-message";
-
-      const img = document.createElement("img");
-      img.src = sender === "user" ? userProfile : botProfile;
-
-      const text = document.createElement("div");
-      text.className = "text";
-      text.textContent = message;
-
-      messageContainer.appendChild(img);
-      messageContainer.appendChild(text);
-      chatBox.appendChild(messageContainer);
-      chatBox.scrollTop = chatBox.scrollHeight;
+        const messageContainer = document.createElement("div");
+        messageContainer.className = sender === "user" ? "user-message" : "bot-message";
+        const img = document.createElement("img");
+        img.src = sender === "user" ? userProfile : botProfile;
+        const text = document.createElement("div");
+        text.className = "text";
+        text.textContent = message;
+        messageContainer.appendChild(img);
+        messageContainer.appendChild(text);
+        chatBox.appendChild(messageContainer);
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
   </script>
 </body>
-  </html>
-  
+</html>
