@@ -2,40 +2,45 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
+const fs = require("fs");
+const axios = require('axios');
 const app = express();
 const port = 3000;
-
-// API Key
 const apikeynyah = "AIzaSyCfpuve4rPxIrorTgsAd3oYQY9izKQwVSg";
 const genAI = new GoogleGenerativeAI(apikeynyah);
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname)));
 const textToSpeech = async (text) => {
-  const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyCfpuve4rPxIrorTgsAd3oYQY9izKQwVSg', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  try {
+    const response = await axios.post('https://texttospeech.googleapis.com/v1/text:synthesize', {
       input: { text: text },
-      voice: { languageCode: 'id-ID', name: 'id-ID-Wavenet-A' }, // Pilih suara ID dari Google TTS
+      voice: { languageCode: 'id-ID', name: 'id-ID-Wavenet-A' },
       audioConfig: { audioEncoding: 'MP3' },
-    }),
-  });
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      params: {
+        key: apikeynyah 
+      }
+    });
+    const audioContent = response.data.audioContent;
 
-  const data = await response.json();
-  const audioContent = data.audioContent;
+    if (!audioContent) {
+      console.error("Failed to get audio content.");
+      return;
+    }
+    const audioBuffer = Buffer.from(audioContent, 'base64');
+    fs.writeFileSync('output.mp3', audioBuffer);
+    console.log("Audio has been saved as 'output.mp3'");
 
-  // Menyimpan atau memutar file suara
-  const audioBlob = new Blob([new Uint8Array(atob(audioContent).split("").map(c => c.charCodeAt(0)))], { type: 'audio/mp3' });
-  const audioURL = URL.createObjectURL(audioBlob);
-
-  // Putar suara
-  const audio = new Audio(audioURL);
-  audio.play();
+    // Anda bisa menambahkan logika untuk memutar audio menggunakan library atau server lain sesuai kebutuhan
+  } catch (error) {
+    console.error("Error generating speech:", error);
+  }
 };
 
+// Contoh penggunaan
 textToSpeech("Halo, saya adalah bot yang berbicara dalam bahasa Indonesia.");
 
 // Routes
